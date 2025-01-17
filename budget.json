@@ -1,16 +1,12 @@
 {
     "monthly_budgets": {
-        "Food": 600,
+        "Groceries": 300,
         "Transportation": 200,
-        "Entertainment": 300,
-        "Shopping": 400,
-        "Healthcare": 200,
-        "Monthly": 500,
-        "Travel": 500,
-        "Education": 100,
-        "Personal Care": 150,
-        "Gifts": 100,
-        "Insurance": 200,
+        "Entertainment": 150,
+        "Dining": 350,
+        "Shopping": 100,
+        "Healthcare": 50,
+        "Monthly": 50,
         "Other": 200
     }
 }
