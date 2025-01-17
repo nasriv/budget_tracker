@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Update Transactions</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 56px; /* Add padding to the body to prevent content from being hidden behind the fixed navbar */
+        }
+        .card:nth-child(even) {
+            background-color: #e9ecef; /* Darker gray background for even cards */
+        }
+        .navbar {
+            background-color: #d3d3d3 !important; /* Darker navbar background */
+        }
+        .transaction-card {
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .date-time-input {
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">Expense Tracker</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('update_form') }}">Update Transactions</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Update Transactions</h1>
+        
+        <!-- Add this block for flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Move the "Fetch New Emails" button to the top -->
+        <form action="{{ url_for('fetch_emails') }}" method="post" class="mb-4" id="fetchEmailsForm">
+            <button type="submit" class="btn btn-secondary">Fetch New Emails</button>
+        </form>
+
+        <form action="{{ url_for('update') }}" method="post">
+            <input type="hidden" name="row_count" value="{{ data|length }}">
+            {% for index, row in data.iterrows() %}
+            <div class="card mb-3 transaction-card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="date_{{ loop.index0 }}" class="form-label">Date and Time</label>
+                            <input type="text" class="form-control date-time-input" id="date_{{ loop.index0 }}" name="date_{{ loop.index0 }}" value="{{ row['date'].strftime('%Y-%m-%d %H:%M:%S.%f%z') }}" readonly>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="description_{{ loop.index0 }}" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="description_{{ loop.index0 }}" name="description_{{ loop.index0 }}" value="{{ row['description'] }}" readonly>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="amount_{{ loop.index0 }}" class="form-label">Amount</label>
+                            <input type="number" step="0.01" class="form-control" id="amount_{{ loop.index0 }}" name="amount_{{ loop.index0 }}" value="{{ row['amount'] }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="category_{{ loop.index0 }}" class="form-label">Category</label>
+                            <select class="form-select" id="category_{{ loop.index0 }}" name="category_{{ loop.index0 }}" required>
+                                {% for category in categories %}
+                                <option value="{{ category }}" {% if category == row['category'] %}selected{% endif %}>
+                                    {{ category }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="notes_{{ loop.index0 }}" class="form-label">Notes</label>
+                            <input type="text" class="form-control" id="notes_{{ loop.index0 }}" name="notes_{{ loop.index0 }}" value="{{ row['notes'] }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">Update Transactions</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Update this script for SSE handling -->
+    <script>
+        document.getElementById('fetchEmailsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            this.submit();
+            
+            var eventSource = new EventSource("{{ url_for('fetch_status') }}");
+            eventSource.onmessage = function(e) {
+                if (e.data === 'complete' || e.data.startsWith('Email fetching') || e.data.startsWith('Error in email fetching')) {
+                    eventSource.close();
+                    // Create a new flash message
+                    var flashDiv = document.createElement('div');
+                    flashDiv.className = 'alert alert-info alert-dismissible fade show';
+                    flashDiv.role = 'alert';
+                    flashDiv.innerHTML = e.data + 
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                    
+                    // Insert the flash message at the top of the container
+                    var container = document.querySelector('.container');
+                    container.insertBefore(flashDiv, container.firstChild);
+                    
+                    // Reload the page after a short delay
+                    setTimeout(function() {
+                        location.reload();
+                    }, 3000);  // 3000 milliseconds = 3 seconds
+                }
+            };
+        });
+    </script>
+</body>
+</html>
