@@ -17,9 +17,10 @@
     "APPLE.COM/BILL": "Monthly",
     "Spotify USA": "Monthly",
     "Etsy Inc Seller Fees": "Monthly",
-    "CVS": "Misc.",
-    "E-Z*PASSNY REBILL": "Misc.",
-    "Duane Reade": "Misc.",
-    "GOOGLE *Domains": "Misc.",
-    "Walgreens": "Misc."
+    "CVS": "Shopping",
+    "E-Z*PASSNY REBILL": "Transportation",
+    "Duane Reade": "Shopping",
+    "GOOGLE *Domains": "Monthly",
+    "Walgreens": "Shopping",
+    "ASSOCIATED MARKET": "Groceries"
 }
