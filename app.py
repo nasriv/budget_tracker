@@ -1,6 +1,6 @@
 import sys
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import threading
 import time
 
@@ -454,7 +454,13 @@ def fetch_emails():
 def fetch_and_process_emails():
     try:
         service = authenticate_gmail()
-        messages = fetch_unread_emails(service)
+        last_fetched_date = get_last_fetched_date()
+        if not last_fetched_date:
+            # Return an error if no last fetched date exists
+            flash("Error: No last fetched date found. Please set a valid date.", "error")
+            return
+
+        messages = fetch_emails_since(service, last_fetched_date)
 
         # Load category mapping
         with open('category_mapping.json') as f:
@@ -466,10 +472,14 @@ def fetch_and_process_emails():
             if email_data is not None:
                 try:
                     store_data_in_duckdb(email_data, category_map)
-                    mark_email_as_read(service, msg['id'])
                     processed_count += 1
                 except Exception as e:
                     print(f"ERROR storing data: {e}")
+
+        # Update the last fetched date to now
+        with open('last_fetched_date.json', 'w') as f:
+            json.dump({'last_fetched_date': datetime.now().isoformat()}, f)
+
         print(f"Email fetching and processing completed. Processed {processed_count} emails.")
         flash(f'Email fetching and processing completed. Processed {processed_count} emails.', 'success')
     except Exception as e:
@@ -483,12 +493,11 @@ def fetch_status():
     def generate():
         while not fetch_complete.is_set():
             time.sleep(1)
-            yield "data: waiting\n\n"
-        if 'fetch_complete_message' in session:
-            yield f"data: {session.pop('fetch_complete_message')}\n\n"
-        else:
-            yield "data: complete\n\n"
-    return Response(generate(), mimetype='text/event-stream')
+            yield "data: waiting\n\n"  # Stream "waiting" status
+        yield "data: complete\n\n"  # Stream "complete" status once done
+
+    # Ensure proper headers for streaming response
+    return Response(generate(), content_type='text/event-stream')
 
 @app.route('/insert_transaction', methods=['POST'])
 def insert_transaction():
