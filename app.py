@@ -160,6 +160,7 @@ def index():
 
     # Get summary statistics
     current_year = datetime.now().year
+    print(current_year)
     current_year_stats = get_current_year_stats(current_year)
     previous_years_avg = get_previous_years_avg(current_year)
     category_spend = get_category_spend(current_year)
@@ -460,7 +461,7 @@ def fetch_and_process_emails():
             flash("Error: No last fetched date found. Please set a valid date.", "error")
             return
 
-        messages = fetch_emails_since(service, last_fetched_date)
+        messages = fetch_unread_emails(service)
 
         # Load category mapping
         with open('category_mapping.json') as f:
