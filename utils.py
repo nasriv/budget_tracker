@@ -116,7 +116,7 @@ def get_email_data(service, message_id):
     subject = next((header['value'] for header in headers if header['name'] == 'Subject'), None)
     # Regex to match the pattern 'Your $2.90 transaction with MTA*NYCT PAYGO'
     if subject:
-        match = re.search(r'You made a \$([\d,]+\.\d{2}) transaction with (.+)', subject)
+        match = re.search(r'Your \$([\d,]+\.\d{2}) transaction with (.+)', subject)
         if not match:
             # Subject line does not match expected format
             print(f"Skipping email. Subject line does not match expected format: {subject}")
@@ -482,33 +482,7 @@ def get_sankey_data(year):
 
     return salary, spend_data
 
-def load_budget_data():
-    """Load budget limits from JSON file"""
-    try:
-        with open('budget.json', 'r') as f:
-            data = json.load(f)
-            return data['monthly_budgets']
-    except Exception as e:
-        print(f"Error loading budget data: {e}")
-        return {}
 
-def get_current_month_spend_by_category():
-    """Get current month's spending by category"""
-    current_date = datetime.now()
-    con = get_connection()
-    query = """
-    SELECT 
-        category,
-        SUM(amount) as total_spend
-    FROM transactions
-    WHERE date_part('year', date) = ?
-    AND date_part('month', date) = ?
-    AND category NOT IN ('Housing', 'Utilities')
-    GROUP BY category
-    """
-    result = con.execute(query, [current_date.year, current_date.month]).fetchall()
-    con.close()
-    return {row[0]: float(row[1]) for row in result}
 
 if __name__ == "__main__":
     ## init db

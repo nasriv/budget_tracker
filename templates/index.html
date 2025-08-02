@@ -1,171 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Expense Tracker</title>
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+      rel="stylesheet"
+    />
     <style>
-        body {
-            padding-top: 56px;
-        }
-        .navbar {
-            background-color: #d3d3d3 !important; /* Darker navbar background */
-        }
-        .trend-up { color: #28a745; }
-        .trend-down { color: #dc3545; }
-        .summary-card { background-color: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-        .category-spend { font-size: 0.9em; }
-        .popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 15px;
-            display: none;
-            z-index: 1000;
-            max-width: 60%;
-            max-height: 70%;
-            overflow-y: auto;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .popup table {
-            font-size: 0.9em;
-        }
-        .popup h4 {
-            margin-bottom: 10px;
-        }
+      body {
+        padding-top: 56px;
+      }
+      .navbar {
+        background-color: #d3d3d3 !important; /* Darker navbar background */
+      }
+      .trend-up {
+        color: #28a745;
+      }
+      .trend-down {
+        color: #dc3545;
+      }
+      .summary-card {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .category-spend {
+        font-size: 0.9em;
+      }
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 15px;
+        display: none;
+        z-index: 1000;
+        max-width: 60%;
+        max-height: 70%;
+        overflow-y: auto;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .popup table {
+        font-size: 0.9em;
+      }
+      .popup h4 {
+        margin-bottom: 10px;
+      }
     </style>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <nav class="navbar navbar-expand-lg navbar-light fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Expense Tracker</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('update_form') }}">Update Transactions</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('insert_form') }}">Insert Transaction</a>
-                    </li>
-                </ul>
-            </div>
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('index') }}"
+          >Expense Tracker</a
+        >
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('index') }}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('update_form') }}"
+                >Update Transactions</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('insert_form') }}"
+                >Insert Transaction</a
+              >
+            </li>
+          </ul>
         </div>
+      </div>
     </nav>
 
     <div class="container mt-4">
-        <h1 class="mb-4">Expense Dashboard</h1>
-        
-        <div class="row">
-            <div class="col-md-4">
-                <div class="summary-card">
-                    <h3>Summary for {{ current_year }}</h3>
-                    <p><strong>Total Spend:</strong> ${{ current_year_stats['total_spend'] }}</p>
-                    <p><strong>Avg Transaction:</strong> ${{ current_year_stats['avg_transaction'] }}</p>
-                    <p><strong>Transaction Count:</strong> {{ current_year_stats['transaction_count'] }}</p>
-                    <p><strong>Max Transaction:</strong> ${{ current_year_stats['max_transaction'] }}</p>
-                    <p><strong>Max Transaction Description:</strong><br>{{ current_year_stats['max_transaction_description'] }}</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="summary-card">
-                    <h3>Category Spend Comparison</h3>
-                    <div class="table-responsive">
-                        <table class="table table-sm category-spend">
-                            <thead>
-                                <tr>
-                                    <th>Category</th>
-                                    <th>Current</th>
-                                    <th>Avg Prev</th>
-                                    <th>Trend</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for category, data in category_spend.items() %}
-                                <tr>
-                                    <td>{{ category }}</td>
-                                    <td>${{ data['current'] }}</td>
-                                    <td>${{ data['avg'] }}</td>
-                                    <td>
-                                        {% if data['trend'] == 'up' %}
-                                            <i class="fas fa-arrow-up trend-up"></i>
-                                        {% else %}
-                                            <i class="fas fa-arrow-down trend-down"></i>
-                                        {% endif %}
-                                        {{ data['percentage'] }}%
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="summary-card">
-                    <h3>Top 5 Monthly Subscriptions</h3>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Description</th>
-                                    <th>Total</th>
-                                    <th>Count</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for description, total_amount, occurrence_count in top_monthly_subscriptions %}
-                                <tr>
-                                    <td>{{ description }}</td>
-                                    <td>${{ "%.2f"|format(total_amount) }}</td>
-                                    <td>{{ occurrence_count }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+      <h1 class="mb-4">Expense Dashboard</h1>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div class="summary-card">
+            <h3>Summary for {{ current_year }}</h3>
+            <p>
+              <strong>Total Spend:</strong> ${{
+              current_year_stats['total_spend'] }}
+            </p>
+            <p>
+              <strong>Avg Transaction:</strong> ${{
+              current_year_stats['avg_transaction'] }}
+            </p>
+            <p>
+              <strong>Transaction Count:</strong> {{
+              current_year_stats['transaction_count'] }}
+            </p>
+            <p>
+              <strong>Max Transaction:</strong> ${{
+              current_year_stats['max_transaction'] }}
+            </p>
+            <p>
+              <strong>Max Transaction Description:</strong><br />{{
+              current_year_stats['max_transaction_description'] }}
+            </p>
+          </div>
         </div>
-        
-        {% for graph in graphs %}
-        <div class="card mb-4">
-            <div class="card-body">
-                {% if loop.last %}  <!-- This is the Sankey diagram (last graph) -->
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <select id="sankeyYearSelect" class="form-select" style="width: auto;">
-                            {% for year in available_years %}
-                            <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>
-                                {{ year }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div id="sankeyContainer">
-                    {{ graph | safe }}
-                </div>
-                {% else %}
-                    {{ graph | safe }}
-                {% endif %}
+        <div class="col-md-4">
+          <div class="summary-card">
+            <h3>Category Spend Comparison</h3>
+            <div class="table-responsive">
+              <table class="table table-sm category-spend">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Current</th>
+                    <th>Avg Prev</th>
+                    <th>Trend</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for category, data in category_spend.items() %}
+                  <tr>
+                    <td>{{ category }}</td>
+                    <td>${{ data['current'] }}</td>
+                    <td>${{ data['avg'] }}</td>
+                    <td>
+                      {% if data['trend'] == 'up' %}
+                      <i class="fas fa-arrow-up trend-up"></i>
+                      {% else %}
+                      <i class="fas fa-arrow-down trend-down"></i>
+                      {% endif %} {{ data['percentage'] }}%
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
             </div>
+          </div>
         </div>
-        {% endfor %}
+        <div class="col-md-4">
+          <div class="summary-card">
+            <h3>Top 5 Monthly Subscriptions</h3>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Description</th>
+                    <th>Total</th>
+                    <th>Count</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for description, total_amount, occurrence_count in
+                  top_monthly_subscriptions %}
+                  <tr>
+                    <td>{{ description }}</td>
+                    <td>${{ "%.2f"|format(total_amount) }}</td>
+                    <td>{{ occurrence_count }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% for graph in graphs %}
+      <div class="card mb-4">
+        <div class="card-body">{{ graph | safe }}</div>
+      </div>
+      {% endfor %}
+
+      <!-- New Average Weekly Spend by Category Chart -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">
+            Average Weekly Spend by Category ({{ current_year }})
+          </h5>
+          <div class="alert alert-info mb-3">
+            <strong>Chart Explanation:</strong> This chart shows the average
+            weekly spending for each category as stacked bars, along with the
+            ratio of dining to groceries spending as a black line. A ratio above
+            1.0 indicates more spending on dining than groceries, while below
+            1.0 indicates more groceries spending.
+          </div>
+          <div id="categorySpendChart"></div>
+        </div>
+      </div>
+
+      <!-- New Average Monthly Spend by Category Chart -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">
+            Average Monthly Spend by Category ({{ current_year }})
+          </h5>
+          <div id="monthlyAverageChart"></div>
+        </div>
+      </div>
     </div>
 
     <div id="popup" class="popup"></div>
@@ -173,123 +226,246 @@
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM fully loaded and parsed');
-            const popup = document.getElementById('popup');
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const popup = document.getElementById("popup");
 
-            function showPopup(content) {
-                console.log('Showing popup');
-                popup.innerHTML = content;
-                popup.style.display = 'block';
-            }
+        function showPopup(content) {
+          console.log("Showing popup");
+          popup.innerHTML = content;
+          popup.style.display = "block";
+        }
 
-            function closePopup() {
-                console.log('Closing popup');
-                popup.style.display = 'none';
-            }
+        function closePopup() {
+          console.log("Closing popup");
+          popup.style.display = "none";
+        }
 
-            // Log all click events on the document
-            document.addEventListener('click', function(e) {
-                console.log('Document clicked:', e.target);
+        // Log all click events on the document
+        document.addEventListener("click", function (e) {
+          console.log("Document clicked:", e.target);
+        });
+
+        // Capture plotly_click events only for the bar chart
+        document
+          .querySelectorAll(".js-plotly-plot")
+          .forEach(function (plot, index) {
+            plot.on("plotly_click", function (e) {
+              console.log("Plotly click event:", e);
+              // Only handle click for the first graph (bar chart)
+              if (index === 0) {
+                handlePlotlyClick(e);
+              }
             });
+          });
 
-            // Capture plotly_click events only for the bar chart
-            document.querySelectorAll('.js-plotly-plot').forEach(function(plot, index) {
-                plot.on('plotly_click', function(e) {
-                    console.log('Plotly click event:', e);
-                    // Only handle click for the first graph (bar chart)
-                    if (index === 0) {
-                        handlePlotlyClick(e);
-                    }
-                });
-            });
+        function handlePlotlyClick(e) {
+          const point = e.points[0];
+          console.log("Clicked point:", point);
+          if (point && point.data.type === "bar") {
+            const fullDate = point.x; // This is in 'YYYY-MM-DD' format
+            const yearMonth = fullDate.substring(0, 7); // Extract 'YYYY-MM'
+            console.log("Clicked year-month:", yearMonth);
 
-            function handlePlotlyClick(e) {
-                const point = e.points[0];
-                console.log('Clicked point:', point);
-                if (point && point.data.type === 'bar') {
-                    const fullDate = point.x;  // This is in 'YYYY-MM-DD' format
-                    const yearMonth = fullDate.substring(0, 7);  // Extract 'YYYY-MM'
-                    console.log('Clicked year-month:', yearMonth);
+            showPopup("Loading...");
 
-                    showPopup('Loading...');
-
-                    fetch(`/top_transactions/${yearMonth}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            console.log('Fetched data:', data);
-                            let content = `<h4>Top Transactions for ${yearMonth}</h4>`;
-                            if (data && data.length > 0) {
-                                content += '<table class="table table-sm"><thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead><tbody>';
-                                data.forEach(transaction => {
-                                    content += `<tr><td>${transaction.date}</td><td>${transaction.description}</td><td>$${transaction.amount.toFixed(2)}</td></tr>`;
-                                });
-                                content += '</tbody></table>';
-                            } else {
-                                content += '<p>No transactions found for this month.</p>';
-                            }
-                            content += '<button onclick="closePopup()" class="btn btn-sm btn-secondary mt-2">Close</button>';
-                            showPopup(content);
-                        })
-                        .catch(error => {
-                            console.error('Error fetching data:', error);
-                            showPopup('Error loading data');
-                        });
+            fetch(`/top_transactions/${yearMonth}`)
+              .then((response) => response.json())
+              .then((data) => {
+                console.log("Fetched data:", data);
+                let content = `<h4>Top Transactions for ${yearMonth}</h4>`;
+                if (data && data.length > 0) {
+                  content +=
+                    '<table class="table table-sm"><thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead><tbody>';
+                  data.forEach((transaction) => {
+                    content += `<tr><td>${transaction.date}</td><td>${
+                      transaction.description
+                    }</td><td>$${transaction.amount.toFixed(2)}</td></tr>`;
+                  });
+                  content += "</tbody></table>";
                 } else {
-                    console.log('Click event not on a bar or point is undefined');
+                  content += "<p>No transactions found for this month.</p>";
                 }
-            }
+                content +=
+                  '<button onclick="closePopup()" class="btn btn-sm btn-secondary mt-2">Close</button>';
+                showPopup(content);
+              })
+              .catch((error) => {
+                console.error("Error fetching data:", error);
+                showPopup("Error loading data");
+              });
+          } else {
+            console.log("Click event not on a bar or point is undefined");
+          }
+        }
 
-            // Close popup when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!popup.contains(e.target) && e.target.nodeName !== 'path') {
-                    closePopup();
-                }
+        // Close popup when clicking outside
+        document.addEventListener("click", function (e) {
+          if (!popup.contains(e.target) && e.target.nodeName !== "path") {
+            closePopup();
+          }
+        });
+
+        // Make closePopup function global
+        window.closePopup = closePopup;
+
+        // Create the new category spend chart
+        createCategorySpendChart();
+
+        // Create the new monthly average chart
+        createMonthlyAverageChart();
+
+        console.log("Event listeners set up");
+      });
+
+      function createCategorySpendChart() {
+        // Fetch data for the category spend chart
+        fetch("/api/category_weekly_spend")
+          .then((response) => response.json())
+          .then((data) => {
+            const months = [
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+            ];
+
+            const traces = [];
+            const categories = [
+              "Dining",
+              "Shopping",
+              "Groceries",
+              "Entertainment",
+            ];
+            const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFB400"];
+
+            categories.forEach((category, index) => {
+              traces.push({
+                x: months,
+                y: data[category] || new Array(12).fill(0),
+                name: category,
+                type: "bar",
+                marker: {
+                  color: colors[index],
+                },
+              });
             });
 
-            // Make closePopup function global
-            window.closePopup = closePopup;
+            // Add the dining to groceries ratio line chart
+            traces.push({
+              x: months,
+              y: data.dining_to_groceries_ratio || new Array(12).fill(0),
+              name: "Dining/Groceries Ratio",
+              type: "scatter",
+              mode: "lines+markers",
+              yaxis: "y2",
+              line: {
+                color: "black",
+                width: 3,
+              },
+              marker: {
+                color: "black",
+                size: 8,
+              },
+            });
 
-            console.log('Event listeners set up');
-        });
+            const layout = {
+              xaxis: {
+                title: "Month",
+              },
+              yaxis: {
+                title: "Average Weekly Spend ($)",
+                side: "left",
+              },
+              yaxis2: {
+                title: "Dining/Groceries Ratio",
+                side: "right",
+                overlaying: "y",
+                showgrid: false,
+              },
+              barmode: "stack",
+              margin: {
+                l: 60,
+                r: 60,
+                b: 50,
+                t: 50,
+              },
+              legend: {
+                orientation: "h",
+                x: 0,
+                y: -0.2,
+                bgcolor: "rgba(255,255,255,0.8)",
+                bordercolor: "rgba(0,0,0,0.2)",
+                borderwidth: 1,
+              },
+            };
 
-        // Add this to your existing JavaScript
-        document.getElementById('sankeyYearSelect').addEventListener('change', function() {
-            const year = this.value;
-            const container = document.getElementById('sankeyContainer');
-            
-            // Show loading state
-            container.innerHTML = '<div class="text-center">Loading...</div>';
-            
-            fetch(`/update_sankey/${year}`)
-                .then(response => response.text())
-                .then(sankeyHtml => {
-                    // Clear existing content
-                    container.innerHTML = '';
-                    
-                    // Create a temporary container to parse the HTML
-                    const temp = document.createElement('div');
-                    temp.innerHTML = sankeyHtml;
-                    
-                    // Extract and execute any scripts
-                    const scripts = temp.getElementsByTagName('script');
-                    const scriptContent = Array.from(scripts).map(script => script.innerHTML).join('\n');
-                    
-                    // Add the new graph HTML
-                    container.innerHTML = sankeyHtml;
-                    
-                    // Execute any script content
-                    if (scriptContent) {
-                        const newScript = document.createElement('script');
-                        newScript.textContent = scriptContent;
-                        document.body.appendChild(newScript);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error updating Sankey diagram:', error);
-                    container.innerHTML = '<div class="alert alert-danger">Error loading diagram</div>';
-                });
-        });
+            Plotly.newPlot("categorySpendChart", traces, layout);
+          })
+          .catch((error) => {
+            console.error("Error fetching category spend data:", error);
+            document.getElementById("categorySpendChart").innerHTML =
+              '<div class="alert alert-danger">Error loading chart data</div>';
+          });
+      }
+
+      function createMonthlyAverageChart() {
+        // Fetch data for the monthly average chart
+        fetch("/api/category_monthly_average")
+          .then((response) => response.json())
+          .then((data) => {
+            const trace = {
+              x: data.categories,
+              y: data.averages,
+              type: "bar",
+              marker: {
+                color: "#2E86AB",
+                opacity: 0.8,
+              },
+              text: data.averages.map((val) => `$${val.toFixed(2)}`),
+              textposition: "outside",
+              textfont: {
+                color: "black",
+                size: 12,
+              },
+              hovertemplate:
+                "%{x}<br>Average Monthly Spend: $%{y:,.2f}<extra></extra>",
+            };
+
+            const layout = {
+              title: "Average Monthly Spend by Category",
+              xaxis: {
+                title: "Category",
+                tickangle: -45,
+              },
+              yaxis: {
+                title: "Average Monthly Spend ($)",
+              },
+              margin: {
+                l: 60,
+                r: 50,
+                b: 100,
+                t: 80,
+              },
+              height: 500,
+            };
+
+            Plotly.newPlot("monthlyAverageChart", [trace], layout);
+          })
+          .catch((error) => {
+            console.error("Error fetching monthly average data:", error);
+            document.getElementById("monthlyAverageChart").innerHTML =
+              '<div class="alert alert-danger">Error loading chart data</div>';
+          });
+      }
     </script>
-</body>
+  </body>
 </html>

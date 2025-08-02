@@ -34,125 +34,57 @@ def get_available_years():
     con.close()
     return years
 
-def create_sankey_diagram(year):
-    """Create Sankey diagram of income and spending"""
-    salary, spend_data = get_sankey_data(year)
+# def create_sankey_diagram(year):
+#     """Create Sankey diagram of income and spending"""
+#     salary, spend_data = get_sankey_data(year)
     
-    # Prepare Sankey data
-    labels = ['Income']  # Start with Income node
-    source = []  # Source nodes
-    target = []  # Target nodes
-    value = []   # Values for flows
+#     # Prepare Sankey data
+#     labels = ['Income']  # Start with Income node
+#     source = []  # Source nodes
+#     target = []  # Target nodes
+#     value = []   # Values for flows
     
-    # Add category nodes
-    for i, (category, amount) in enumerate(spend_data, 1):
-        labels.append(category)
-        source.append(0)  # From Income (node 0)
-        target.append(i)  # To category node
-        value.append(float(amount))
+#     # Add category nodes
+#     for i, (category, amount) in enumerate(spend_data, 1):
+#         labels.append(category)
+#         source.append(0)  # From Income (node 0)
+#         target.append(i)  # To category node
+#         value.append(float(amount))
     
-    # Calculate remaining/savings
-    total_spend = sum(float(amount) for _, amount in spend_data)
-    if salary > total_spend:
-        labels.append('Savings')
-        source.append(0)
-        target.append(len(labels) - 1)
-        value.append(salary - total_spend)
+#     # Calculate remaining/savings
+#     total_spend = sum(float(amount) for _, amount in spend_data)
+#     if salary > total_spend:
+#         labels.append('Savings')
+#         source.append(0)
+#         target.append(len(labels) - 1)
+#         value.append(salary - total_spend)
 
-    # Create Sankey diagram
-    fig = go.Figure(data=[go.Sankey(
-        node=dict(
-            pad=15,
-            thickness=20,
-            line=dict(color="black", width=0.5),
-            label=labels,
-            color="blue"
-        ),
-        link=dict(
-            source=source,
-            target=target,
-            value=value
-        )
-    )])
+#     # Create Sankey diagram
+#     fig = go.Figure(data=[go.Sankey(
+#         node=dict(
+#             pad=15,
+#             thickness=20,
+#             line=dict(color="black", width=0.5),
+#             label=labels,
+#             color="blue"
+#         ),
+#         link=dict(
+#             source=source,
+#             target=target,
+#             value=value
+#         )
+#     )])
 
-    fig.update_layout(
-        title_text=f"Income and Spending Flow {year}",
-        font_size=12,
-        height=600
-    )
+#     fig.update_layout(
+#         title_text=f"Income and Spending Flow {year}",
+#         font_size=12,
+#         height=600
+#     )
 
-    # Change here: include plotlyjs for AJAX updates
-    return fig.to_html(full_html=False, include_plotlyjs=True)
+#     # Change here: include plotlyjs for AJAX updates
+#     return fig.to_html(full_html=False, include_plotlyjs=True)
 
-def create_budget_tracker():
-    """Create budget tracking visualization for current month"""
-    current_spend = get_current_month_spend_by_category()
-    budget_limits = load_budget_data()
-    
-    categories = []
-    spend_amounts = []
-    remaining_amounts = []
-    colors = []
-    budget_text = []  # For showing total budget
-    spent_text = []   # For showing amount spent
-    
-    for category, budget in budget_limits.items():
-        if category not in ['Housing', 'Utilities']:
-            spent = current_spend.get(category, 0)
-            remaining = max(budget - spent, 0)
-            over_budget = spent > budget
-            
-            categories.append(category)
-            spend_amounts.append(spent)
-            remaining_amounts.append(remaining if not over_budget else 0)
-            colors.append('red' if over_budget else 'blue')
-            
-            # Create text labels
-            budget_text.append(f"Budget: ${budget:,.0f}")  # Total budget at top
-            if over_budget:
-                spent_text.append(f"${spent:,.0f}<br>Over by: ${spent - budget:,.0f}")
-            else:
-                spent_text.append(f"${spent:,.0f}")
-    
-    # Create stacked bar chart
-    fig = go.Figure(data=[
-        go.Bar(
-            name='Spent',
-            x=categories,
-            y=spend_amounts,
-            marker_color=colors,
-            text=spent_text,
-            textposition='auto',
-            hovertemplate='%{x}<br>Spent: $%{y:,.2f}<extra></extra>'
-        ),
-        go.Bar(
-            name='Remaining',
-            x=categories,
-            y=remaining_amounts,
-            marker_color='lightgray',
-            text=budget_text,
-            textposition='outside',
-            textfont=dict(color='black'),
-            hovertemplate='%{x}<br>Remaining: $%{y:,.2f}<extra></extra>'
-        )
-    ])
-    
-    # Update layout with increased height
-    fig.update_layout(
-        title=f"Budget Tracking - {datetime.now().strftime('%B %Y')}",
-        barmode='stack',
-        height=600,  # Increased from 400 to 600
-        yaxis_title="Amount ($)",
-        xaxis_title="Category",
-        xaxis_tickangle=-45,
-        showlegend=True,
-        # Add more space at the top for labels
-        yaxis=dict(
-            range=[0, max([a + b for a, b in zip(spend_amounts, remaining_amounts)]) * 1.15]
-        )
-    )
 
-    return fig.to_html(full_html=False, include_plotlyjs=False)
 
 @app.route('/')
 def index():
@@ -367,13 +299,9 @@ def index():
     # Get available years for dropdown
     available_years = get_available_years()
     
-    # Add budget tracker before the Sankey diagram
-    graph_budget = create_budget_tracker()
-    graphs.append(graph_budget)
-    
-    # Create Sankey diagram with current year
-    graph_sankey = create_sankey_diagram(current_year)
-    graphs.append(graph_sankey)
+    # # Create Sankey diagram with current year
+    # graph_sankey = create_sankey_diagram(current_year)
+    # graphs.append(graph_sankey)
 
     print(f"Number of graphs: {len(graphs)}")  # Print the number of graphs
 
@@ -444,6 +372,108 @@ def top_transactions(year_month):
     top_transactions = query_top_transactions_for_month(year_month)
     print(f"Top transactions for {year_month}:", top_transactions)  # Add this line
     return jsonify(top_transactions)
+
+@app.route('/api/category_weekly_spend')
+def category_weekly_spend():
+    """API endpoint for category weekly spend data"""
+    try:
+        current_year = datetime.now().year
+        con = get_connection()
+        
+        # Query to get monthly spending for specific categories
+        query = """
+        SELECT 
+            date_part('month', date) as month,
+            category,
+            SUM(amount) as total_spend,
+            COUNT(DISTINCT date_part('week', date)) as weeks_in_month
+        FROM transactions
+        WHERE date_part('year', date) = ?
+        AND category IN ('Dining', 'Shopping', 'Entertainment', 'Groceries')
+        GROUP BY date_part('month', date), category
+        ORDER BY month, category
+        """
+        
+        result = con.execute(query, [current_year]).fetchall()
+        con.close()
+        
+        # Initialize data structure for 12 months
+        categories = ['Dining', 'Shopping', 'Entertainment', 'Groceries']
+        data = {category: [0] * 12 for category in categories}
+        
+        # Process the results and calculate average weekly spend
+        for month, category, total_spend, weeks_in_month in result:
+            month_index = int(month) - 1  # Convert to 0-based index
+            if weeks_in_month > 0:
+                avg_weekly_spend = float(total_spend) / weeks_in_month
+                data[category][month_index] = round(avg_weekly_spend, 2)
+        
+        # Calculate dining to groceries ratio for each month
+        dining_to_groceries_ratio = []
+        for i in range(12):
+            dining_spend = data['Dining'][i]
+            groceries_spend = data['Groceries'][i]
+            if groceries_spend > 0:
+                ratio = round(dining_spend / groceries_spend, 2)
+            else:
+                ratio = 0
+            dining_to_groceries_ratio.append(ratio)
+        
+        # Add the ratio to the data
+        data['dining_to_groceries_ratio'] = dining_to_groceries_ratio
+        
+        return jsonify(data)
+        
+    except Exception as e:
+        print(f"Error in category_daily_spend: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/category_monthly_average')
+def category_monthly_average():
+    """API endpoint for average monthly spend by category across all years"""
+    try:
+        current_year = datetime.now().year
+        con = get_connection()
+        
+        # Query to get average monthly spending by category across all years
+        query = """
+        SELECT 
+            category,
+            AVG(monthly_total) as avg_monthly_spend
+        FROM (
+            SELECT 
+                category,
+                date_part('year', date) as year,
+                date_part('month', date) as month,
+                SUM(amount) as monthly_total
+            FROM transactions
+            WHERE category != 'Uncategorized'
+            AND date_part('year', date) = ?
+            GROUP BY category, date_part('year', date), date_part('month', date)
+        ) monthly_data
+        GROUP BY category
+        ORDER BY avg_monthly_spend DESC
+        """
+        
+        result = con.execute(query,  [current_year]).fetchall()
+        con.close()
+        
+        # Prepare data for the chart
+        categories = []
+        averages = []
+        
+        for category, avg_spend in result:
+            categories.append(category)
+            averages.append(round(float(avg_spend), 2))
+        
+        return jsonify({
+            'categories': categories,
+            'averages': averages
+        })
+        
+    except Exception as e:
+        print(f"Error in category_monthly_average: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/fetch_emails', methods=['POST'])
 def fetch_emails():
@@ -537,10 +567,10 @@ def insert_transaction():
 def inject_current_year():
     return {"current_year": datetime.now().year}
 
-@app.route('/update_sankey/<int:year>')
-def update_sankey(year):
-    """AJAX endpoint to get updated Sankey diagram"""
-    return create_sankey_diagram(year)
+# @app.route('/update_sankey/<int:year>')
+# def update_sankey(year):
+#     """AJAX endpoint to get updated Sankey diagram"""
+#     return create_sankey_diagram(year)
 
 if __name__ == '__main__':
     # Run Flask app
