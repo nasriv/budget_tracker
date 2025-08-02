@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import threading
 import time
 
+import logging
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, Response, session, current_app
 import plotly.graph_objs as go
 import plotly.express as px
@@ -14,7 +15,11 @@ from plotly import utils
 from utils import *
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Add this line for flash messages
+app.secret_key = 'budget_tracker_secret_key_2025'  # Should be moved to environment variable in production
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 fetch_complete = threading.Event()
 
@@ -34,56 +39,6 @@ def get_available_years():
     con.close()
     return years
 
-# def create_sankey_diagram(year):
-#     """Create Sankey diagram of income and spending"""
-#     salary, spend_data = get_sankey_data(year)
-    
-#     # Prepare Sankey data
-#     labels = ['Income']  # Start with Income node
-#     source = []  # Source nodes
-#     target = []  # Target nodes
-#     value = []   # Values for flows
-    
-#     # Add category nodes
-#     for i, (category, amount) in enumerate(spend_data, 1):
-#         labels.append(category)
-#         source.append(0)  # From Income (node 0)
-#         target.append(i)  # To category node
-#         value.append(float(amount))
-    
-#     # Calculate remaining/savings
-#     total_spend = sum(float(amount) for _, amount in spend_data)
-#     if salary > total_spend:
-#         labels.append('Savings')
-#         source.append(0)
-#         target.append(len(labels) - 1)
-#         value.append(salary - total_spend)
-
-#     # Create Sankey diagram
-#     fig = go.Figure(data=[go.Sankey(
-#         node=dict(
-#             pad=15,
-#             thickness=20,
-#             line=dict(color="black", width=0.5),
-#             label=labels,
-#             color="blue"
-#         ),
-#         link=dict(
-#             source=source,
-#             target=target,
-#             value=value
-#         )
-#     )])
-
-#     fig.update_layout(
-#         title_text=f"Income and Spending Flow {year}",
-#         font_size=12,
-#         height=600
-#     )
-
-#     # Change here: include plotlyjs for AJAX updates
-#     return fig.to_html(full_html=False, include_plotlyjs=True)
-
 
 
 @app.route('/')
@@ -92,7 +47,6 @@ def index():
 
     # Get summary statistics
     current_year = datetime.now().year
-    print(current_year)
     current_year_stats = get_current_year_stats(current_year)
     previous_years_avg = get_previous_years_avg(current_year)
     category_spend = get_category_spend(current_year)
@@ -298,12 +252,6 @@ def index():
 
     # Get available years for dropdown
     available_years = get_available_years()
-    
-    # # Create Sankey diagram with current year
-    # graph_sankey = create_sankey_diagram(current_year)
-    # graphs.append(graph_sankey)
-
-    print(f"Number of graphs: {len(graphs)}")  # Print the number of graphs
 
     return render_template('index.html', 
                            graphs=graphs, 
@@ -321,7 +269,7 @@ def update():
 
     # Get the row count to loop through form fields
     row_count = int(request.form['row_count'])
-    print(row_count)
+    logger.info(f"Total rows in transaction_history: {row_count}")
     # Track the number of rows updated
     rows_updated = 0
 
@@ -343,13 +291,13 @@ def update():
             result = con.execute(query, [category, amount, notes, date, description])
             rows_updated += result.rowcount  # Track how many rows were updated
         except Exception as e:
-            print(f'Error updating row: {e}')
+            logger.error(f'Error updating row: {e}')
 
     # Explicitly commit changes
     con.commit()
     con.close()
 
-    print(f"Rows updated: {rows_updated}")
+    logger.info(f"Rows updated: {rows_updated}")
     flash(f"{rows_updated} transactions updated successfully", "success")
     return redirect(url_for('update_form'))
 
@@ -369,9 +317,13 @@ def insert_form():
 # Add this new route to handle AJAX requests for top transactions
 @app.route('/top_transactions/<year_month>')
 def top_transactions(year_month):
-    top_transactions = query_top_transactions_for_month(year_month)
-    print(f"Top transactions for {year_month}:", top_transactions)  # Add this line
-    return jsonify(top_transactions)
+    """Get top transactions for a specific year-month"""
+    try:
+        top_transactions_data = query_top_transactions_for_month(year_month)
+        return jsonify(top_transactions_data)
+    except Exception as e:
+        logger.error(f"Error fetching top transactions for {year_month}: {e}")
+        return jsonify({'error': 'Failed to fetch transactions'}), 500
 
 @app.route('/api/category_weekly_spend')
 def category_weekly_spend():
@@ -425,7 +377,7 @@ def category_weekly_spend():
         return jsonify(data)
         
     except Exception as e:
-        print(f"Error in category_daily_spend: {e}")
+        logger.error(f"Error in category_daily_spend: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/category_monthly_average')
@@ -472,7 +424,7 @@ def category_monthly_average():
         })
         
     except Exception as e:
-        print(f"Error in category_monthly_average: {e}")
+        logger.error(f"Error in category_monthly_average: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/fetch_emails', methods=['POST'])
@@ -505,16 +457,16 @@ def fetch_and_process_emails():
                     store_data_in_duckdb(email_data, category_map)
                     processed_count += 1
                 except Exception as e:
-                    print(f"ERROR storing data: {e}")
+                    logger.error(f"ERROR storing data: {e}")
 
         # Update the last fetched date to now
         with open('last_fetched_date.json', 'w') as f:
             json.dump({'last_fetched_date': datetime.now().isoformat()}, f)
 
-        print(f"Email fetching and processing completed. Processed {processed_count} emails.")
+        logger.info(f"Email fetching and processing completed. Processed {processed_count} emails.")
         flash(f'Email fetching and processing completed. Processed {processed_count} emails.', 'success')
     except Exception as e:
-        print(f"Error in fetch_and_process_emails: {e}")
+        logger.error(f"Error in fetch_and_process_emails: {e}")
         flash(f'Error in email fetching: {str(e)}', 'error')
     finally:
         fetch_complete.set()
@@ -566,12 +518,6 @@ def insert_transaction():
 @app.context_processor
 def inject_current_year():
     return {"current_year": datetime.now().year}
-
-# @app.route('/update_sankey/<int:year>')
-# def update_sankey(year):
-#     """AJAX endpoint to get updated Sankey diagram"""
-#     return create_sankey_diagram(year)
-
 if __name__ == '__main__':
     # Run Flask app
-    app.run(debug=True)
+    app.run(debug=False, host='127.0.0.1', port=5000)

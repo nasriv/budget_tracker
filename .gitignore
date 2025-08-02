@@ -1,7 +1,56 @@
+# Environment variables and configuration
 .env
+*.env
+
+# Google API credentials and tokens
 credentials.json
 token.json
+
+# Virtual environments
 .venv/
 .venv/*
+venv/
+env/
+
+# Database files
 *.db
+*.sqlite
+*.sqlite3
+
+# Python cache and compiled files
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Application specific files
+last_fetched_date.json
+settings.json
+budget.json
+categories.json
+category_mapping.json
+salary_map.json
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp

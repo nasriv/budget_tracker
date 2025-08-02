@@ -1,15 +1,17 @@
 import os
 import json
-import base64
 import re
 import duckdb
-import datetime
+import logging
 from datetime import datetime, timedelta
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # ------------------- Gmail API Authentication and Data Extraction -------------------
 
@@ -25,7 +27,7 @@ def authenticate_gmail():
         try:
             creds = Credentials.from_authorized_user_file(token_file, SCOPES)
         except Exception as e:
-            print(f"Error loading token.json: {e}")
+            logger.error(f"Error loading token.json: {e}")
             creds = None
     # If no valid credentials, initiate the OAuth flow
     if not creds or not creds.valid:
@@ -33,14 +35,14 @@ def authenticate_gmail():
             try:
                 creds.refresh(Request())
             except Exception as e:
-                print(f"Error refreshing token: {e}")
+                logger.error(f"Error refreshing token: {e}")
                 creds = None
         else:
             try:
                 flow = InstalledAppFlow.from_client_secrets_file(credentials_file, SCOPES)
                 creds = flow.run_local_server(port=0)
             except Exception as e:
-                print(f"Error during OAuth flow: {e}")
+                logger.error(f"Error during OAuth flow: {e}")
                 return None
         # Save the new credentials to token.json
         if creds:
@@ -48,12 +50,12 @@ def authenticate_gmail():
                 with open(token_file, 'w') as token:
                     token.write(creds.to_json())
             except Exception as e:
-                print(f"Error saving token.json: {e}")
+                logger.error(f"Error saving token.json: {e}")
     # Build the Gmail service
     try:
         service = build('gmail', 'v1', credentials=creds)
     except Exception as e:
-        print(f"Error building Gmail service: {e}")
+        logger.error(f"Error building Gmail service: {e}")
         return None
     return service
 
@@ -66,7 +68,7 @@ def get_last_fetched_date():
             settings = json.load(f)
             return datetime.strptime(settings.get('last_fetched_date', ''), '%Y-%m-%dT%H:%M:%S')
     except Exception as e:
-        print(f"Error reading last_fetched_date from settings.json: {e}")
+        logger.error(f"Error reading last_fetched_date from settings.json: {e}")
         return None
 
 def update_last_fetched_date(date):
@@ -77,23 +79,23 @@ def update_last_fetched_date(date):
             with open(SETTINGS_FILE, 'r') as f:
                 settings = json.load(f)
         except Exception as e:
-            print(f"Error reading settings.json: {e}")
+            logger.error(f"Error reading settings.json: {e}")
     settings['last_fetched_date'] = date.strftime('%Y-%m-%dT%H:%M:%S')
     try:
         with open(SETTINGS_FILE, 'w') as f:
             json.dump(settings, f, indent=4)
     except Exception as e:
-        print(f"Error writing to settings.json: {e}")
+        logger.error(f"Error writing to settings.json: {e}")
 
-# def fetch_emails_since(service, last_fetched_date):
-#     """Fetch emails since the last fetched date."""
-#     query = f'after:{last_fetched_date.strftime("%Y/%m/%d")}'
-#     try:
-#         results = service.users().messages().list(userId='me', labelIds=['Label_12'], q=query).execute()
-#     except Exception as e:
-#         print(f"ERROR: {e}")
-#         return []
-#     return results.get('messages', [])
+def fetch_emails_since(service, last_fetched_date):
+    """Fetch emails since the last fetched date."""
+    query = f'after:{last_fetched_date.strftime("%Y/%m/%d")}'
+    try:
+        results = service.users().messages().list(userId='me', labelIds=['Label_12'], q=query).execute()
+    except Exception as e:
+        print(f"ERROR: {e}")
+        return []
+    return results.get('messages', [])
 
 def fetch_unread_emails(service):
     # Get today's date and yesterday's date

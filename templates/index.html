@@ -227,31 +227,22 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        console.log("DOM fully loaded and parsed");
         const popup = document.getElementById("popup");
 
         function showPopup(content) {
-          console.log("Showing popup");
           popup.innerHTML = content;
           popup.style.display = "block";
         }
 
         function closePopup() {
-          console.log("Closing popup");
           popup.style.display = "none";
         }
-
-        // Log all click events on the document
-        document.addEventListener("click", function (e) {
-          console.log("Document clicked:", e.target);
-        });
 
         // Capture plotly_click events only for the bar chart
         document
           .querySelectorAll(".js-plotly-plot")
           .forEach(function (plot, index) {
             plot.on("plotly_click", function (e) {
-              console.log("Plotly click event:", e);
               // Only handle click for the first graph (bar chart)
               if (index === 0) {
                 handlePlotlyClick(e);
@@ -261,18 +252,15 @@
 
         function handlePlotlyClick(e) {
           const point = e.points[0];
-          console.log("Clicked point:", point);
           if (point && point.data.type === "bar") {
             const fullDate = point.x; // This is in 'YYYY-MM-DD' format
             const yearMonth = fullDate.substring(0, 7); // Extract 'YYYY-MM'
-            console.log("Clicked year-month:", yearMonth);
 
             showPopup("Loading...");
 
             fetch(`/top_transactions/${yearMonth}`)
               .then((response) => response.json())
               .then((data) => {
-                console.log("Fetched data:", data);
                 let content = `<h4>Top Transactions for ${yearMonth}</h4>`;
                 if (data && data.length > 0) {
                   content +=
@@ -294,8 +282,6 @@
                 console.error("Error fetching data:", error);
                 showPopup("Error loading data");
               });
-          } else {
-            console.log("Click event not on a bar or point is undefined");
           }
         }
 
@@ -314,8 +300,6 @@
 
         // Create the new monthly average chart
         createMonthlyAverageChart();
-
-        console.log("Event listeners set up");
       });
 
       function createCategorySpendChart() {
@@ -413,7 +397,7 @@
           .catch((error) => {
             console.error("Error fetching category spend data:", error);
             document.getElementById("categorySpendChart").innerHTML =
-              '<div class="alert alert-danger">Error loading chart data</div>';
+              '<div class="alert alert-danger">Error loading weekly spend chart. Please refresh the page.</div>';
           });
       }
 
@@ -463,7 +447,7 @@
           .catch((error) => {
             console.error("Error fetching monthly average data:", error);
             document.getElementById("monthlyAverageChart").innerHTML =
-              '<div class="alert alert-danger">Error loading chart data</div>';
+              '<div class="alert alert-danger">Error loading monthly average chart. Please refresh the page.</div>';
           });
       }
     </script>
