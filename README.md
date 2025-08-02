@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Budget Tracker
 
 A Flask-based web application that automatically tracks expenses by processing Chase bank transaction emails and provides interactive visualizations of spending patterns.
@@ -182,3 +183,6 @@ This project is for personal use. Please respect Gmail API terms of service and 
 - Keep `credentials.json` and `token.json` secure and never commit to version control
 - The application processes financial data - ensure proper security measures in production
 - Consider encrypting sensitive configuration files for production use
+=======
+README.md
+>>>>>>> d46580c90132cf4fa1ec478ce8bbd00d67fe2dda
